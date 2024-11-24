@@ -51,14 +51,19 @@ coverage_th <- docvars %>%
   dplyr::select(category, datum, structure_affirming, structure_failure, understructure, inequality_and_power,
                 efficiency_concerns, principles_of_democracy, reporting_style, gr_as_example)
 
-media_themes_time <- docvars %>%
-  dplyr::group_by(category) %>% 
+media_themes_time <- coverage_th %>%
+  tidyr::pivot_longer(!c(category, datum), names_to = "theme", values_to = "themecount") %>% 
+  dplyr::filter(category == "Media" & is.na(datum) == F & datum >= as_date("2023-12-31")) %>%   
+  dplyr::group_by(theme) %>% 
   timetk::summarise_by_time(.date_var = datum,
                             .by = "month",
-                            structure_affirming = n(structure_affirming),
-                            structure_failure = n(structure_failure)) %>%
-  dplyr::filter(category == "Media" & is.na(datum) == F & datum >= as_date("2023-12-31")) #%>% 
-  plot_time_series(datum, value, .smooth = F, .title = "Themenabdeckung in Medienberichterstattung über den Guten Rat (nach Monaten)")
+                            themecount = sum(themecount)
+                            ) %>%
+  plot_time_series(datum, themecount, 
+                   .facet_ncol = 2, 
+                   .interactive = F, 
+                   .smooth = F,
+                   .title = "Themenabdeckung in Medienberichterstattung über den Guten Rat (nach Monaten)")
   
   
   
