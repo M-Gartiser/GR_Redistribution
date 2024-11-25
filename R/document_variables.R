@@ -46,7 +46,7 @@ media_cov_m <- docvars %>%
   dplyr::filter(category == "Media" & is.na(datum) == F & datum >= as_date("2023-12-31")) %>% 
   plot_time_series(datum, value, .smooth = F, .title = "Medienbeiträge über den Guten Rat (nach Monaten)")
   
-# themes
+# themes aggregated references
 
 coverage_th <- docvars %>% 
   dplyr::select(category, datum, structure_affirming, structure_failure, understructure, inequality_and_power,
@@ -85,6 +85,41 @@ media_themes_week <- coverage_th %>%
                    .smooth = F,
                    .title = "Themenabdeckung in Medienberichterstattung über den Guten Rat (nach Wochen)")
   
-  
-  
+# themes occurring in articles (non-aggregated)
+
+nonaggr_th <- coverage_th %>% 
+  dplyr::mutate(themecount = dplyr::case_when(themecount >= 1 ~ 1,
+                                              .default = themecount))
+
+
+nonaggr_themes_month <- nonaggr_th %>%
+  dplyr::filter(!theme == "reporting_style") %>% 
+  dplyr::group_by(theme) %>% 
+  timetk::summarise_by_time(.date_var = datum,
+                            .by = "month",
+                            themecount = sum(themecount)
+  ) %>%
+  plot_time_series(datum, themecount, 
+                   .facet_ncol = 2,
+                   .facet_scales = "fixed",
+                   .facet_collapse = T,
+                   .interactive = F, 
+                   .smooth = F,
+                   .title = "Themenvorkommen in Medienbeiträgen über den Guten Rat (nach Artikeln und Monaten)")
+
+nonaggr_themes_week <- nonaggr_th %>%
+  dplyr::filter(!theme == "reporting_style") %>% 
+  dplyr::group_by(theme) %>% 
+  timetk::summarise_by_time(.date_var = datum,
+                            .by = "week",
+                            .week_start = 1,
+                            themecount = sum(themecount)
+  ) %>%
+  plot_time_series(datum, themecount, 
+                   .facet_ncol = 2,
+                   .facet_scales = "fixed",
+                   .facet_collapse = T,
+                   .interactive = F, 
+                   .smooth = F,
+                   .title = "Themenvorkommen in Medienbeiträgen über den Guten Rat (nach Artikeln und Wochen)")
 
