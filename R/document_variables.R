@@ -18,7 +18,8 @@ docvars <- readxl::read_xlsx(here("data/document_variables-2024-11-24.xlsx")) %>
                   "structure_affirming" = "structure_related_ii:_affirming",
                   "structure_failure" = "structure_related_i:_failures",
                   "inequality_and_power" = "inequality_and-or_asymmetry_of_power",
-                  "principles_of_democracy" = "priniples_of_democracy")) %>% 
+                  "principles_of_democracy" = "priniples_of_democracy",
+                  "critique_of_gr" = "efficiency_concerns")) %>% 
   dplyr::mutate(erstellt_am = dmy_hms(erstellt_am),
                 datum = dmy_hms(datum))
 
@@ -49,21 +50,40 @@ media_cov_m <- docvars %>%
 
 coverage_th <- docvars %>% 
   dplyr::select(category, datum, structure_affirming, structure_failure, understructure, inequality_and_power,
-                efficiency_concerns, principles_of_democracy, reporting_style, gr_as_example)
-
-media_themes_time <- coverage_th %>%
+                critique_of_gr, principles_of_democracy, reporting_style, gr_as_example) %>%
   tidyr::pivot_longer(!c(category, datum), names_to = "theme", values_to = "themecount") %>% 
-  dplyr::filter(category == "Media" & is.na(datum) == F & datum >= as_date("2023-12-31")) %>%   
+  dplyr::filter(category == "Media" & is.na(datum) == F & datum >= as_date("2023-12-31"))
+
+media_themes_month <- coverage_th %>%
+  dplyr::filter(!theme == "reporting_style") %>% 
   dplyr::group_by(theme) %>% 
   timetk::summarise_by_time(.date_var = datum,
                             .by = "month",
                             themecount = sum(themecount)
                             ) %>%
   plot_time_series(datum, themecount, 
-                   .facet_ncol = 2, 
+                   .facet_ncol = 2,
+                   .facet_scales = "fixed",
+                   .facet_collapse = T,
                    .interactive = F, 
                    .smooth = F,
                    .title = "Themenabdeckung in Medienberichterstattung über den Guten Rat (nach Monaten)")
+
+media_themes_week <- coverage_th %>%
+  dplyr::filter(!theme == "reporting_style") %>% 
+  dplyr::group_by(theme) %>% 
+  timetk::summarise_by_time(.date_var = datum,
+                            .by = "week",
+                            .week_start = 1,
+                            themecount = sum(themecount)
+  ) %>%
+  plot_time_series(datum, themecount, 
+                   .facet_ncol = 2,
+                   .facet_scales = "fixed",
+                   .facet_collapse = T,
+                   .interactive = F, 
+                   .smooth = F,
+                   .title = "Themenabdeckung in Medienberichterstattung über den Guten Rat (nach Wochen)")
   
   
   
