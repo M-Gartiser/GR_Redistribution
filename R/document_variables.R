@@ -53,15 +53,16 @@ media_cov <- themes_docvars %>%
   dplyr::filter(is.na(datum) == F & datum >= as_date("2023-12-31")) %>% 
   ggplot( mapping = aes(x = datum, y = value, colour = category)) +
   geom_line(linewidth = 1) +
-  geom_vline(data = ) +
+  geom_vline(data = gr_dates, aes(xintercept = datum), 
+             linetype = 2, linewidth = 0,75, colour = "black") +
   labs(title = "Beiträge über den Guten Rat",
        subtitle = "Medien- und Eigenbeiträge in Wochen",
        colour = "Quelle",
        x = "Datum",
        y = "Anzahl") +
   theme_bw() +
-  scale_color_brewer(palette = "Set1
-                     ", labels = c("Medien", "GR")) +
+  scale_color_brewer(palette = "Set1", 
+                     labels = c("Medien", "GR")) +
   scale_x_date(date_breaks = "month", date_labels = "%b") +
   theme(
     plot.title = element_text(face = "bold")
