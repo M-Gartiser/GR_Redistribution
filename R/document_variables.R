@@ -38,47 +38,67 @@ themes_docvars <- docvars %>%
 # plot media coverage over time
 
 # weeks
-media_cov <- docvars %>% 
+media_cov <- themes_docvars %>%
   dplyr::group_by(category, datum) %>% 
   timetk::summarise_by_time(.date_var = datum,
                             .by = "week",
                             .week_start = 1,
                             value = n()) %>%
-  dplyr::filter(category == "Media" & is.na(datum) == F & datum >= as_date("2023-12-31")) %>% 
-  plot_time_series(datum, value, .smooth = F, .title = "Medienbeiträge über den Guten Rat (nach Wochen)")
+  dplyr::filter(is.na(datum) == F & datum >= as_date("2023-12-31")) %>% 
+  ggplot( mapping = aes(x = datum, y = value, colour = category)) +
+  geom_line(linewidth = 1) +
+  labs(title = "Beiträge über den Guten Rat",
+       subtitle = "Medien- und Eigenbeiträge in Wochen",
+       colour = "Quelle",
+       x = "Datum",
+       y = "Anzahl") +
+  theme_bw() +
+  scale_color_brewer(palette = "Set1
+                     ", labels = c("Medien", "GR")) +
+  scale_x_date(date_breaks = "month", date_labels = "%b") +
+  theme(
+    plot.title = element_text(face = "bold")
+  )
+
+ggsave("coverage_gr_comp_2024-11-28.svg",
+       device = "svg",
+       width = 14,
+       height = 6,
+       path = here("output/plots")
+)
   
 
 # months
-media_cov_m <- docvars %>% 
-  dplyr::group_by(category, datum) %>% 
-  timetk::summarise_by_time(.date_var = datum,
-                            .by = "month",
-                            value = n()) %>%
-  dplyr::filter(category == "Media" & is.na(datum) == F & datum >= as_date("2023-12-31")) %>% 
-  plot_time_series(datum, value, .smooth = F, .title = "Medienbeiträge über den Guten Rat (nach Monaten)")
+# media_cov_m <- docvars %>% 
+#   dplyr::group_by(category, datum) %>% 
+#   timetk::summarise_by_time(.date_var = datum,
+#                             .by = "month",
+#                             value = n()) %>%
+#   dplyr::filter(is.na(datum) == F & datum >= as_date("2023-12-31")) %>% 
+#   plot_time_series(datum, value, .smooth = F, .title = "Medienbeiträge über den Guten Rat (nach Monaten)")
   
 # themes aggregated references
 
-coverage_th <- docvars %>% 
+coverage_th <- themes_docvars %>% 
   dplyr::select(category, datum, structure_affirming, structure_failure, understructure, inequality_and_power,
                 critique_of_gr, principles_of_democracy, reporting_style, gr_as_example) %>%
   tidyr::pivot_longer(!c(category, datum), names_to = "theme", values_to = "themecount") %>% 
   dplyr::filter(category == "Media" & is.na(datum) == F & datum >= as_date("2023-12-31"))
 
-media_themes_month <- coverage_th %>%
-  dplyr::filter(!theme == "reporting_style") %>% 
-  dplyr::group_by(theme) %>% 
-  timetk::summarise_by_time(.date_var = datum,
-                            .by = "month",
-                            themecount = sum(themecount)
-                            ) %>%
-  plot_time_series(datum, themecount, 
-                   .facet_ncol = 2,
-                   .facet_scales = "fixed",
-                   .facet_collapse = T,
-                   .interactive = F, 
-                   .smooth = F,
-                   .title = "Themenabdeckung in Medienberichterstattung über den Guten Rat (nach Monaten)")
+# media_themes_month <- coverage_th %>%
+#   dplyr::filter(!theme == "reporting_style") %>% 
+#   dplyr::group_by(theme) %>% 
+#   timetk::summarise_by_time(.date_var = datum,
+#                             .by = "month",
+#                             themecount = sum(themecount)
+#                             ) %>%
+#   plot_time_series(datum, themecount, 
+#                    .facet_ncol = 2,
+#                    .facet_scales = "fixed",
+#                    .facet_collapse = T,
+#                    .interactive = F, 
+#                    .smooth = F,
+#                    .title = "Themenabdeckung in Medienberichterstattung über den Guten Rat (nach Monaten)")
 
 media_themes_week <- coverage_th %>%
   dplyr::filter(!theme == "reporting_style") %>% 
