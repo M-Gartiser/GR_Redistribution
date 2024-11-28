@@ -12,7 +12,10 @@ library(timetk)
 
 # load document variable xlsx
 
-docvars <- readxl::read_xlsx(here("data/document_variables-2024-11-24.xlsx")) %>% 
+docvars <- readxl::read_xlsx(here("data/coded_segments_2024-11-28.xlsx"),
+                             col_types = c(rep("guess", times = 19), 
+                                           rep("text", times = 7),
+                                           rep("guess", times = 8))) %>% 
   dplyr::rename_with( ~ tolower(gsub(" ", "_", .x))) %>% 
   dplyr::rename(c("datum" = "datum_(veröffentlichung)",
                   "structure_affirming" = "structure_related_ii:_affirming",
@@ -20,8 +23,8 @@ docvars <- readxl::read_xlsx(here("data/document_variables-2024-11-24.xlsx")) %>
                   "inequality_and_power" = "inequality_and-or_asymmetry_of_power",
                   "principles_of_democracy" = "priniples_of_democracy",
                   "critique_of_gr" = "efficiency_concerns")) %>% 
-  dplyr::mutate(erstellt_am = dmy_hms(erstellt_am),
-                datum = dmy_hms(datum))
+  dplyr::mutate(erstellt_am = parse_date_time(erstellt_am, orders = c("YmdHMS", "dmYHM")),
+                datum = dmy(datum))
 
 
 # plot media coverage over time
