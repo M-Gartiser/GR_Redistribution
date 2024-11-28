@@ -34,6 +34,12 @@ sub_docvars <- docvars %>%
 themes_docvars <- docvars %>% 
   dplyr::filter(str_detect(code, ">") == F)
 
+gr_dates <- tibble::tibble(
+  datum = lubridate::as_datetime(
+    c("2024-01-09", "2024-03-16", "2024-04-06", "2024-04-20", "2024-05-04", "2024-05-25", "2024-06-08", "2024-06-18", "2024-09-14")),
+  event = c("Projektlaunch", "WE1", "WE2", "WE3", "WE4", "WE5", "WE6", "Ergebnisverkündung", "Abschluss")
+)
+
 
 # plot media coverage over time
 
@@ -47,6 +53,7 @@ media_cov <- themes_docvars %>%
   dplyr::filter(is.na(datum) == F & datum >= as_date("2023-12-31")) %>% 
   ggplot( mapping = aes(x = datum, y = value, colour = category)) +
   geom_line(linewidth = 1) +
+  geom_vline(data = ) +
   labs(title = "Beiträge über den Guten Rat",
        subtitle = "Medien- und Eigenbeiträge in Wochen",
        colour = "Quelle",
