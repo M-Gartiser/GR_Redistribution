@@ -17,14 +17,22 @@ docvars <- readxl::read_xlsx(here("data/coded_segments_2024-11-28.xlsx"),
                                            rep("text", times = 7),
                                            rep("guess", times = 8))) %>% 
   dplyr::rename_with( ~ tolower(gsub(" ", "_", .x))) %>% 
+  dplyr::select(!c(farbe, segment, dokumentname...12) & !starts_with("dokumentgruppe")) %>% 
   dplyr::rename(c("datum" = "datum_(veröffentlichung)",
                   "structure_affirming" = "structure_related_ii:_affirming",
                   "structure_failure" = "structure_related_i:_failures",
                   "inequality_and_power" = "inequality_and-or_asymmetry_of_power",
                   "principles_of_democracy" = "priniples_of_democracy",
-                  "critique_of_gr" = "efficiency_concerns")) %>% 
+                  "critique_of_gr" = "efficiency_concerns",
+                  "dokumentname" = "dokumentname...3")) %>% 
   dplyr::mutate(erstellt_am = parse_date_time(erstellt_am, orders = c("YmdHMS", "dmYHM")),
                 datum = dmy(datum))
+
+sub_docvars <- docvars %>% 
+  dplyr::filter(str_detect(code, ">") == T)
+
+themes_docvars <- docvars %>% 
+  dplyr::filter(str_detect(code, ">") == F)
 
 
 # plot media coverage over time
