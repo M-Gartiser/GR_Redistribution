@@ -155,12 +155,13 @@ coverage_th <- themes_docvars %>%
 #                    .title = "Themenabdeckung in Medienberichterstattung über den Guten Rat (nach Monaten)")
 
 media_themes_week <- coverage_th %>%
-  dplyr::group_by(code, datum) %>%
+  dplyr::group_by(dokumentname, code, datum, category) %>%
   timetk::summarise_by_time(.date_var = datum,
                             .by = "week",
                             .week_start = 1,
-                            themecount = sum(themecount)
-  ) %>%
+                            themecount = n(),
+                            themecount_weigthed = sum(gewicht)
+  ) #%>%
   plot_time_series(datum, themecount, 
                    .facet_ncol = 2,
                    .facet_scales = "fixed",
