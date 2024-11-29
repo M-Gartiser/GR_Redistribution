@@ -8,7 +8,7 @@ library(tidyverse)
 library(ggplot2)
 library(ggpubr)
 library(timetk)
-
+library(paletteer)
 
 # load document variable xlsx
 
@@ -34,18 +34,23 @@ sub_docvars <- docvars %>%
 themes_docvars <- docvars %>% 
   dplyr::filter(str_detect(code, ">") == F)
 
-gr_dates <- tibble::tibble(
-  datum = lubridate::as_datetime(
+gr_events <- tibble::tibble(
+  datum = lubridate::ymd(
     c("2024-01-09", "2024-03-16", "2024-04-06", "2024-04-20", "2024-05-04", "2024-05-25", "2024-06-08", "2024-06-18", "2024-09-14")),
-  event = c("Projektlaunch", "WE1", "WE2", "WE3", "WE4", "WE5", "WE6", "Ergebnisverkündung", "Abschluss")
+  event = c("Projektlaunch", "WE1", "WE2", "WE3", "WE4", "WE5", "WE6", "Ergebnisverkündung", "Abschluss"),
+  y.end = rep(0, times = 9),
+  y = c(37, 13, 9, 7, 8, 9, 29, 44, 6)
 )
 
 
-# plot media coverage over time
+
+# (1) plot media coverage over time ---------------------------------------
 
 # weeks
 media_cov <- themes_docvars %>%
-  dplyr::group_by(category, datum) %>% 
+  dplyr::select(dokumentname, datum, category) %>% 
+  dplyr::distinct() %>% 
+  dplyr::group_by(category, datum) %>% #false. Need to restrain to only include one of each articles
   timetk::summarise_by_time(.date_var = datum,
                             .by = "week",
                             .week_start = 1,
@@ -53,19 +58,22 @@ media_cov <- themes_docvars %>%
   dplyr::filter(is.na(datum) == F & datum >= as_date("2023-12-31")) %>% 
   ggplot( mapping = aes(x = datum, y = value, colour = category)) +
   geom_line(linewidth = 1) +
-  geom_vline(data = gr_dates, aes(xintercept = datum), 
-             linetype = 2, linewidth = 0,75, colour = "black") +
+  scale_color_brewer(palette = "Set1", 
+                     labels = c("Medien", "GR")) +
+  scale_x_date(date_breaks = "month", date_labels = "%b") +  
+  geom_segment(data = gr_events, 
+               mapping = aes(x = datum, y = y, yend = y.end),linewidth = 0.35, inherit.aes = F) +
+  geom_label(data = gr_events, aes(x = datum, y = y + 0.5, label = event), 
+             inherit.aes = F) + 
   labs(title = "Beiträge über den Guten Rat",
-       subtitle = "Medien- und Eigenbeiträge in Wochen",
+       subtitle = "Medien- und Eigenbeiträge nach Kalenderwochen 2024",
        colour = "Quelle",
        x = "Datum",
        y = "Anzahl") +
   theme_bw() +
-  scale_color_brewer(palette = "Set1", 
-                     labels = c("Medien", "GR")) +
-  scale_x_date(date_breaks = "month", date_labels = "%b") +
   theme(
-    plot.title = element_text(face = "bold")
+    plot.title = element_text(face = "bold"),
+    legend.position = "bottom"
   )
 
 ggsave("coverage_gr_comp_2024-11-28.svg",
@@ -84,14 +92,53 @@ ggsave("coverage_gr_comp_2024-11-28.svg",
 #                             value = n()) %>%
 #   dplyr::filter(is.na(datum) == F & datum >= as_date("2023-12-31")) %>% 
 #   plot_time_series(datum, value, .smooth = F, .title = "Medienbeiträge über den Guten Rat (nach Monaten)")
-  
-# themes aggregated references
+
+
+# (2) reporting style -----------------------------------------------------
+
+repstyle <- docvars %>% 
+  dplyr::filter(stringr::str_detect(code, "Reporting|xample") == T) %>% 
+  dplyr::mutate(code = code %>% stringr::str_replace_all("Reporting Style > ", "")) %>% 
+  dplyr::group_by(code) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::add_row(tibble(code = "Gesamt", n = 172)) %>% 
+  dplyr::mutate(prozent = round((n*100)/172, digits = 1),
+                code = code %>% 
+                  stringr::str_replace_all(c(
+                    "cler" = "st",
+                    "cal" = "sch",
+                    "GR as example" = "Beispiel",
+                    " Journalism" = ""
+                  ))
+                ) %>% 
+  dplyr::arrange(desc(n)) %>% 
+  ggplot2::ggplot( mapping = aes(x = reorder(code, n, decreasing = T), y = n)) +
+  geom_bar( aes(fill = reorder(code, n, decreasing = T)), stat = "identity") +
+  geom_text( aes(y = n+5, label = stringr::str_c(n, " (", prozent, "%)")))+
+  theme_classic() +
+  scale_fill_paletteer_d("LaCroixColoR::Apricot", direction = -1) +
+  labs(title = "Art der Reportage über den Guten Rat",
+       subtitle = "Anzahl der Artikel nach Reportagestil") +
+  theme(plot.title = element_text(face = "bold"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none"
+        )
+
+ggsave("reportingstyle_2024-11-29.svg",
+       device = "svg",
+       width = 7,
+       height = 5,
+       path = here("output/plots")
+)
+
+
+# (3) Themes coded (& weighted) -------------------------------------------
 
 coverage_th <- themes_docvars %>% 
-  dplyr::select(category, datum, structure_affirming, structure_failure, understructure, inequality_and_power,
-                critique_of_gr, principles_of_democracy, reporting_style, gr_as_example) %>%
-  tidyr::pivot_longer(!c(category, datum), names_to = "theme", values_to = "themecount") %>% 
-  dplyr::filter(category == "Media" & is.na(datum) == F & datum >= as_date("2023-12-31"))
+  dplyr::select(category, code, datum, structure_affirming, structure_failure, understructure, inequality_and_power,
+                critique_of_gr, principles_of_democracy) %>%
+  dplyr::filter(is.na(datum) == F & datum >= as_date("2023-12-31"))
 
 # media_themes_month <- coverage_th %>%
 #   dplyr::filter(!theme == "reporting_style") %>% 
