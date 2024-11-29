@@ -50,7 +50,7 @@ gr_events <- tibble::tibble(
 media_cov <- themes_docvars %>%
   dplyr::select(dokumentname, datum, category) %>% 
   dplyr::distinct() %>% 
-  dplyr::group_by(category, datum) %>% #false. Need to restrain to only include one of each articles
+  dplyr::group_by(category, datum) %>%
   timetk::summarise_by_time(.date_var = datum,
                             .by = "week",
                             .week_start = 1,
@@ -136,9 +136,8 @@ ggsave("reportingstyle_2024-11-29.svg",
 # (3) Themes coded (& weighted) -------------------------------------------
 
 coverage_th <- themes_docvars %>% 
-  dplyr::select(category, code, datum, structure_affirming, structure_failure, understructure, inequality_and_power,
-                critique_of_gr, principles_of_democracy) %>%
-  dplyr::filter(is.na(datum) == F & datum >= as_date("2023-12-31"))
+  dplyr::select(dokumentname, category, code, datum, gewicht) %>%
+  dplyr::filter(is.na(datum) == F & datum >= as_date("2023-12-31") & stringr::str_detect(code, "example") == F)
 
 # media_themes_month <- coverage_th %>%
 #   dplyr::filter(!theme == "reporting_style") %>% 
@@ -156,8 +155,7 @@ coverage_th <- themes_docvars %>%
 #                    .title = "Themenabdeckung in Medienberichterstattung über den Guten Rat (nach Monaten)")
 
 media_themes_week <- coverage_th %>%
-  dplyr::filter(!theme == "reporting_style") %>% 
-  dplyr::group_by(theme) %>% 
+  dplyr::group_by(code, datum) %>%
   timetk::summarise_by_time(.date_var = datum,
                             .by = "week",
                             .week_start = 1,
