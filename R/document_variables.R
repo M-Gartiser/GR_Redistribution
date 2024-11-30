@@ -161,44 +161,73 @@ media_themes_week <- coverage_th %>%
                             .week_start = 1,
                             themecount = n(),
                             themecount_weigthed = sum(gewicht)
-  ) 
+  ) %>% 
+  tidyr::pivot_longer(cols = c(themecount, themecount_weigthed), 
+                      names_to = "theme_type",
+                      values_to = "n") %>%
+  dplyr::mutate(code_ger = code %>% 
+                  stringr::str_replace_all(c(
+                    "Efficiency Concerns" = "Effizienzsorgen/Ablaufkritik",
+                    "Inequality and-or Asymmetry of Power" = "Ungleichheit und Machtasymmetrie",
+                    "Priniples of Democracy" = "Demokratische Prinzipien",
+                    "Structure Related I: Failures" = "Struktur I: Fehlentwicklung",
+                    "Structure Related II: Affirming" = "Struktur II: Affirmativ"
+                  )))
 
 
 
  themes_comp <- 
    media_themes_week %>%
-   ggplot( aes(x = datum, y = themecount, colour = category)) + 
+   dplyr::filter(theme_type == "themecount") %>% 
+   ggplot( aes(x = datum, y = n, colour = category)) + 
    geom_line() + 
-   facet_wrap( ~ code, ncol = 2) +
+   facet_wrap( ~ code_ger, ncol = 2) +
    labs(title = "Themen in der Eigen- und Medienkommunikation des GR",
         subtitle = "Anzahl der Codes über Zeit",
         x = "Datum",
-        y = "Kodierte Segmente") +
-   theme_minimal() + 
-   theme(
-     legend.position = "bottom",
-     plot.title = element_text(face = "bold")
-   )
-
- medthemes_weighted <- 
-   media_themes_week %>%
-   dplyr::filter(category == "Media") %>% 
-   tidyr::pivot_longer()
-   ggplot( aes(x = datum, y = themecount)) + 
-   geom_line( colour = "skyblue") +
-   geom_line( aes(x = datum, y = themecount_weigthed), colour = "darkred") +
-   facet_wrap( ~ code, ncol = 2) +
-   labs(title = "Themen in der Medienberichterstattung über den GR",
-        subtitle = "Anzahl der Codes über Zeit, gewichtet und ungewichtet",
-        x = "Datum",
-        y = "Kodierte Segmente") +
+        y = "Kodierte Segmente",
+        colour = "Quelle"
+        ) +
+   scale_color_brewer(palette = "Set1", 
+                      labels = c("Medien", "Eigenkommunikation")) +
    theme_minimal() + 
    theme(
      legend.position = "bottom",
      plot.title = element_text(face = "bold")
    )
  
+ ggsave("themes_compared_2024-11-30.svg",
+        device = "svg",
+        width = 14,
+        height = 7,
+        path = here("output/plots")
+ )
 
+ medthemes_weighted <- 
+   media_themes_week %>%
+   dplyr::filter(category == "Media") %>% 
+   ggplot( aes(x = datum, y = n, colour = theme_type)) + 
+   geom_line() +
+   facet_wrap( ~ code_ger, ncol = 2) +
+   labs(title = "Themen in der Medienberichterstattung über den GR",
+        subtitle = "Anzahl der Codes über Zeit, gewichtet und ungewichtet",
+        x = "Datum",
+        y = "Kodierte Segmente",
+        colour = "") +
+   scale_color_brewer(palette = "Set1", 
+                      labels = c("ungewichtet", "gewichtet")) +
+   theme_minimal() + 
+   theme(
+     legend.position = "bottom",
+     plot.title = element_text(face = "bold")
+   )
+ 
+ ggsave("themes_weigthed_2024-11-30.svg",
+        device = "svg",
+        width = 14,
+        height = 7,
+        path = here("output/plots")
+ )
 
 
 # themes occurring in articles (non-aggregated)
