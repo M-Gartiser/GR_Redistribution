@@ -230,13 +230,58 @@ media_themes_week <- coverage_th %>%
  )
 
 
-# themes occurring in articles (non-aggregated)
+# (4) Theme occurrence ----------------------------------------------------
 
-nonaggr_th <- coverage_th %>% 
-  dplyr::mutate(themecount = dplyr::case_when(themecount >= 1 ~ 1,
-                                              .default = themecount))
+theme_occ <- coverage_th %>% 
+   dplyr::group_by(dokumentname, code, datum, category) %>%
+   dplyr::summarise(theme_count = n()) %>% 
+   dplyr::mutate(theme_occ = dplyr::case_when(theme_count >= 1 ~ 1,
+                                              .default = theme_count)) %>% 
+   dplyr::group_by(code, datum, category, theme_occ) %>% 
+   timetk::summarise_by_time(.date_var = datum,
+                             .by = "week",
+                             .week_start = 1,
+                             theme_occ = sum(theme_occ)
+   ) %>%
+   dplyr::mutate(code_ger = code %>% 
+                   stringr::str_replace_all(c(
+                     "Efficiency Concerns" = "Effizienzsorgen/Ablaufkritik",
+                     "Inequality and-or Asymmetry of Power" = "Ungleichheit und Machtasymmetrie",
+                     "Priniples of Democracy" = "Demokratische Prinzipien",
+                     "Structure Related I: Failures" = "Struktur I: Fehlentwicklung",
+                     "Structure Related II: Affirming" = "Struktur II: Affirmativ"
+                   )))
 
 
+themeocc_comp <- 
+   theme_occ %>%
+   ggplot( aes(x = datum, y = theme_occ, colour = category)) + 
+   geom_line() + 
+   facet_wrap( ~ code_ger, ncol = 2) +
+   labs(title = "Themen in der Eigen- und Medienkommunikation des GR",
+        subtitle = "Anzahl der Beiträge über Zeit",
+        x = "Datum",
+        y = "Beiträge",
+        colour = "Quelle"
+   ) +
+   scale_color_brewer(palette = "Set1", 
+                      labels = c("Medien", "Eigenkommunikation")) +
+   theme_minimal() + 
+   theme(
+     legend.position = "bottom",
+     plot.title = element_text(face = "bold")
+   )
+ 
+ggsave("theme_occurrence_compared_2024-11-30.svg",
+        device = "svg",
+        width = 14,
+        height = 7,
+        path = here("output/plots")
+ )
+ 
+ 
+ 
+ 
 nonaggr_themes_month <- nonaggr_th %>%
   dplyr::filter(!theme == "reporting_style") %>% 
   dplyr::group_by(theme) %>% 
